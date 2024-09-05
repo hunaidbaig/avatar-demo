@@ -1,0 +1,5 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "pieces.cloudCapabilities": "Blended",
+  "pieces.telemetry": true
+}
