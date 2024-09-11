@@ -47,6 +47,10 @@ export default function InteractiveAvatar() {
   const mediaStream = useRef<HTMLVideoElement>(null);
   const [transcript, setTranscript] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [avatarIsSpeaking, setAvatarIsSpeaking] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isVideo, setIsVideo] = useState(false);
+  
   
   const avatar = useRef<StreamingAvatarApi | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
@@ -135,6 +139,7 @@ export default function InteractiveAvatar() {
 
     const stopTalkCallback = (e: any) => {
       console.log("Avatar stopped talking", e);
+      setAvatarIsSpeaking(false);
     };
 
     console.log("Adding event handlers:", avatar.current);
@@ -174,7 +179,7 @@ export default function InteractiveAvatar() {
       setDebug("Avatar API not initialized");
       return;
     }
-    console.log(avatar, 'avatar----')
+    // console.log(avatar, 'avatar----')
     await avatar.current
       .speak({ taskRequest: { text: text, sessionId: data?.sessionId } })
       .catch((e) => {
@@ -191,12 +196,15 @@ export default function InteractiveAvatar() {
     }
 
     try {
-      const url = "http://127.0.0.1:8000/query/?station_id=123&query=what%20is%20boundless%20technology";
+      const url = "http://127.0.0.1:8000/query/";
       
       const response = await fetch(`${url}?station_id=123&query=${query}`);
       const result = await response.json();
-      console.log(result.response, '=======================')
-  
+
+      //avatar is speaking right now!
+      setAvatarIsSpeaking(true);
+      console.log('false hogaya')  
+
       await avatar.current
         .speak({ taskRequest: { text: result.response, sessionId: data?.sessionId } })
         .catch((e) => {
@@ -290,52 +298,48 @@ export default function InteractiveAvatar() {
     }
   }
 
+   // Handle file upload (image or video)
+   const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const fileUrl = URL.createObjectURL(file);
+
+      if (file.type.startsWith("video/")) {
+        setIsVideo(true); 
+      } else {
+        setIsVideo(false); 
+      }
+
+      setUploadedFile(fileUrl); 
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-4 h-screen ">
       <Card>
-        <CardBody className="h-[80vh] flex flex-col justify-center items-center">
+        <CardBody className={`h-[80vh] p-0  flex flex-col justify-center items-center`}>
+
+          {stream && uploadedFile && isVideo ? (
+            <video
+              src={uploadedFile}
+              autoPlay
+              loop
+              muted
+              className="absolute top-0 left-0 w-full h-full object-cover z-10"
+            />
+          ) : stream && uploadedFile ? (
+            <div
+              className="absolute top-0 left-0 w-full h-full bg-cover bg-center z-10"
+              style={{ backgroundImage: `url(${uploadedFile})` }}
+            />
+          ) : stream ? (
+            <div
+              className="absolute top-0 left-0 w-full h-full bg-cover bg-center z-10"
+              style={{ backgroundImage: `url('/bg.jpg')` }}
+            />
+          ) : null}
+
           {stream ? (
-            // <div className="relative h-[80vh] w-[900px] justify-center items-center flex rounded-lg overflow-hidden">
-            //   <video
-            //     ref={mediaStream}
-            //     autoPlay
-            //     playsInline
-            //     style={{
-            //       width: "100%",
-            //       height: "100%",
-            //       objectFit: "contain",
-            //     }}
-            //     className={`${canPlay && 'hidden'}`}
-            //     onCanPlay={() => {
-            //       setCanPlay(true)
-            //     }} 
-                
-            //   >
-            //     <track kind="captions" />
-            //   </video>
-            //   {canPlay && <CanvasRender videoRef={mediaStream} />}
-            //   {canPlay && <video autoPlay playsInline  src={'/bg.mp4'} loop
-            //    className="absolute top-0 right-0 bottom-0 h-full w-full object-cover"
-            //    />}
-            //   {/* <div className="flex flex-col gap-2 absolute bottom-3 right-3">
-            //     <Button
-            //       size="md"
-            //       onClick={handleInterrupt}
-            //       className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
-            //       variant="shadow"
-            //     >
-            //       Interrupt task
-            //     </Button>
-            //     <Button
-            //       size="md"
-            //       onClick={endSession}
-            //       className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
-            //       variant="shadow"
-            //     >
-            //       End session
-            //     </Button>
-            //   </div> */}
-            // </div>
             <Avatar 
               canPlay={canPlay} 
               setCanPlay={setCanPlay} 
@@ -345,6 +349,8 @@ export default function InteractiveAvatar() {
               setTranscript= {setTranscript}
               handleSpeakWithMic = {handleSpeakWithMic}
               handleInterrupt = {handleInterrupt}
+              setAvatarIsSpeaking={setAvatarIsSpeaking}
+              avatarIsSpeaking={avatarIsSpeaking}
               />
 
           ) : !isLoadingSession ? (
@@ -410,6 +416,22 @@ export default function InteractiveAvatar() {
           ) : (
             <Spinner size="lg" color="default" />
           )}
+
+        {
+          stream && 
+            <div className="z-20 absolute left-10 bottom-10">
+              <label className="block text-sm font-medium text-blue-700">
+                Upload Image or Video
+              </label>
+              <input
+                type="file"
+                accept="image/*, video/*"
+                onChange={handleFileUpload}
+                className="mt-2"
+              />
+            </div>
+        }
+          
         </CardBody>
         <Divider />
         <CardFooter className="flex flex-col gap-3">
@@ -457,7 +479,7 @@ export default function InteractiveAvatar() {
             }
             disabled={!stream}
           /> */}
-          <InteractiveAvatarTextInput
+          {/* <InteractiveAvatarTextInput
             label="Repeat"
             placeholder="Type something for the avatar to repeat"
             input={text}
@@ -465,7 +487,7 @@ export default function InteractiveAvatar() {
             setInput={setText}
             disabled={!stream}
             loading={isLoadingRepeat}
-          />
+          /> */}
           
           <div className="w-full flex justify-center items-center h-[40px] rounded-lg">
             { speaking ? 
