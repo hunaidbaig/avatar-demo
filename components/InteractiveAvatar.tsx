@@ -317,7 +317,7 @@ export default function InteractiveAvatar() {
   return (
     <div className="w-full flex flex-col gap-4 h-screen ">
       <Card>
-        <CardBody className={`h-[80vh] p-0  flex flex-col justify-center items-center`}>
+        <CardBody className={`h-screen w-full p-0  flex flex-col justify-end items-center`}>
 
           {stream && uploadedFile && isVideo ? (
             <video
@@ -489,7 +489,7 @@ export default function InteractiveAvatar() {
             loading={isLoadingRepeat}
           /> */}
           
-          <div className="w-full flex justify-center items-center h-[40px] rounded-lg">
+          {/* <div className="w-full flex justify-center items-center h-[40px] rounded-lg">
             { speaking ? 
                 <div>
                   <img src="/streaming-listening.gif" />
@@ -500,7 +500,7 @@ export default function InteractiveAvatar() {
               </div>
 
             }
-          </div>
+          </div> */}
 
         </CardFooter>
       </Card>

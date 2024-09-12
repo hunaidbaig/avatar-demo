@@ -65,19 +65,19 @@ function Avatar({
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
         // model: "nova-2",
-        // punctuate: true,
+        punctuate: true,
         // language: "en-US",
         // encoding: "linear16",
-        // channels: 1,
-        // sample_rate: 16000,
+        channels: 1,
+        sample_rate: 16000,
         // endpointing: 500,
         // smart_format: true,
         model: "nova-2",
         interim_results: true,
-        smart_format: true,
+        // smart_format: true,
         filler_words: true,
         // utterance_end_ms: 2000,
-        endpointing: 500,
+        endpointing: 5000,
 
       });
     }
@@ -102,8 +102,8 @@ function Avatar({
       const { is_final: isFinal, speech_final: speechFinal } = data;
 
       let received = data.channel.alternatives[0].transcript;
-      console.log(isFinal, 'isFinal');
-      if (isFinal) {
+      console.log(isFinal, 'isFinal', received);
+      if (isFinal && !speechFinal) {
         setSpeaking(false)
         if(received.length > 0){
           console.log('idhar aya', speechFinal)
@@ -118,12 +118,10 @@ function Avatar({
         // setCaption(prev=>  prev?.concat(received));
       }
       else {
-        // clearTimeout(captionTimeout.current);
-        // setCaption(prev=>  prev?.concat(received));
         if(caption.length>0){
         caption = caption.concat(received);
         setFinalScript(caption);
-        console.log('ab yaha hn!');
+        console.log('ab yaha hn!=====>');
 
           handleEndOfSpeech(caption);
           console.log(caption)

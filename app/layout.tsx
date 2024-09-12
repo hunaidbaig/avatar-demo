@@ -53,7 +53,7 @@ export default function RootLayout({
           <DeepgramContextProvider>
             <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
               <main className="relative flex flex-col h-screen w-screen overflow-hidden">
-                <NavBar />
+                {/* <NavBar /> */}
                 {children}
               </main>
             </Providers>

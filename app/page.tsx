@@ -20,7 +20,7 @@ export default function App() {
 
   return (
     <div className="w-screen h-screen flex flex-col">
-      <div className="w-full flex h-full flex-col items-start justify-center gap-5 px-9">
+      <div className="w-full flex h-full flex-col items-start justify-center gap-5">
         <div className="w-full h-full">
           {/* <Tabs items={tabs}>
             {(items) => (
