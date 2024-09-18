@@ -24,7 +24,9 @@ function Avatar({
   setTranscript,
   handleSpeakWithMic,
   setAvatarIsSpeaking,
-  avatarIsSpeaking
+  avatarIsSpeaking,
+  setMessages,
+  messages
 }: any) {
   const silenceTimeoutRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -46,7 +48,13 @@ function Avatar({
 
       // Send the transcript to the backend here
       // Example: sendToBackend(finalTranscript);
-
+      setMessages((prevMessages:any) => [
+        ...prevMessages,
+        {
+          user: 'user',
+          message: finalTranscript,
+        }
+      ]);
       handleSpeakWithMic(finalTranscript);
 
       setIsProcessing(false);
@@ -93,6 +101,7 @@ function Avatar({
       // Prevent packetZero from being sent. If sent at size 0, the connection will close. 
       console.log('onData')
       if (e.data.size > 0) {
+        console.log(e, '====>')
         connection?.send(e.data);
       }
     };
@@ -135,7 +144,7 @@ function Avatar({
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
 
-      startMicrophone();
+     startMicrophone();
     }
 
     return () => {
@@ -197,46 +206,6 @@ function Avatar({
           className="absolute top-0 right-0 bottom-0 h-full w-full object-cover"
         />
       )}
-
-      <div className="flex flex-col gap-2 absolute bottom-3 right-3 z-10">
-        <Button
-          size="md"
-          onClick={handleInterrupt}
-          className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
-          variant="shadow"
-        >
-          Interrupt task
-        </Button>
-        {
-          microphoneState === MicrophoneState.Paused ?
-            <Button 
-              onClick={startMicrophone}
-              size="md"
-              className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
-              variant="shadow"
-            >
-              start
-            </Button>
-            :
-            <Button 
-              onClick={stopMicrophone}
-              size="md"
-              className="bg-gradient-to-tr from-indigo-500 to-indigo-300 text-white rounded-lg"
-              variant="shadow"
-            >
-              Stop
-            </Button>
-
-        }
-        {/* <Button
-                   size="md"
-                   onClick={endSession}
-                   className="bg-gradient-to-tr from-indigo-500 to-indigo-300  text-white rounded-lg"
-                   variant="shadow"
-                 >
-                   End session
-                 </Button> */}
-      </div>
     </div>
   );
 }

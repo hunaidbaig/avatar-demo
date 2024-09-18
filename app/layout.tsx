@@ -7,7 +7,9 @@ import { Providers } from "./providers";
 import { Fira_Code as FontMono, Inter as FontSans } from "next/font/google";
 import NavBar from "@/components/NavBar";
 import { DeepgramContextProvider } from "./context/DeepgramContextProvider";
-import { MicrophoneContextProvider } from "./context/MicrophoneContextProvider";
+import dynamic from "next/dynamic";
+// import { MicrophoneContextProvider } from "./context/MicrophoneContextProvider";
+const MicrophoneContextProvider = dynamic(() => import('./context/MicrophoneContextProvider').then(mod => mod.MicrophoneContextProvider), { ssr: false });
 
 const fontSans = FontSans({
   subsets: ["latin"],

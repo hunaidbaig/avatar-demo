@@ -30,6 +30,11 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
+interface MessageType{
+  user : string;
+  message : string;
+}
+
 export default function InteractiveAvatar() {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [isLoadingRepeat, setIsLoadingRepeat] = useState(false);
@@ -50,6 +55,7 @@ export default function InteractiveAvatar() {
   const [avatarIsSpeaking, setAvatarIsSpeaking] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isVideo, setIsVideo] = useState(false);
+  const [messages, setMessages] = useState<MessageType[]>([]);
   
   
   const avatar = useRef<StreamingAvatarApi | null>(null);
@@ -189,6 +195,7 @@ export default function InteractiveAvatar() {
   }
 
   async function handleSpeakWithMic(query : string) {
+    console.log('hello bro')
     setIsLoadingRepeat(true);
     if (!initialized || !avatar.current) {
       setDebug("Avatar API not initialized");
@@ -203,14 +210,21 @@ export default function InteractiveAvatar() {
 
       //avatar is speaking right now!
       setAvatarIsSpeaking(true);
-      console.log('false hogaya')  
 
       await avatar.current
         .speak({ taskRequest: { text: result.response, sessionId: data?.sessionId } })
         .catch((e) => {
           setDebug(e.message);
         });
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            user: 'bot',
+            message: result.response,
+          }
+        ]);
       setIsLoadingRepeat(false);
+      setInput('');
     
     } catch (error) {
       console.log(error)
@@ -299,10 +313,10 @@ export default function InteractiveAvatar() {
   }
 
    // Handle file upload (image or video)
-   const handleFileUpload = (event) => {
+   const handleFileUpload = (event:any) => {
     const file = event.target.files[0];
     if (file) {
-      const fileUrl = URL.createObjectURL(file);
+      const fileUrl:any = URL.createObjectURL(file);
 
       if (file.type.startsWith("video/")) {
         setIsVideo(true); 
@@ -351,6 +365,8 @@ export default function InteractiveAvatar() {
               handleInterrupt = {handleInterrupt}
               setAvatarIsSpeaking={setAvatarIsSpeaking}
               avatarIsSpeaking={avatarIsSpeaking}
+              setMessages={setMessages}
+              messages={messages}
               />
 
           ) : !isLoadingSession ? (
@@ -431,10 +447,57 @@ export default function InteractiveAvatar() {
               />
             </div>
         }
+
+        
+      {
+        stream && 
+        <div className="z-10 w-[50%] absolute">
+          <div className="px-4 text-white z-10 h-[200px] overflow-y-auto pt-8" style={{
+            maskImage: "linear-gradient(to top, black, transparent)"
+          }}>
+            {
+              messages?.map((message, index)=>(
+                <div className="flex justify-start mt-2">
+                  <div className="flex justify-between gap-3">
+                    <div className={`h-[20px] w-[20px] ${message.user === 'bot' ? 'bg-[rgb(64,67,211)]': 'bg-gray-500'}  rounded-full flex justify-center items-center`}>
+                      {
+                        message.user === 'bot' ? 'Q' : 'U'
+                      }
+                    </div>
+                    <p className="w-full"
+                    style={{
+                      background: "linear-gradient(313deg, rgba(50, 181, 255, 0.07) 9.15%, rgba(255, 114, 224, 0.07) 104.07%), rgba(22, 23, 26, 0.3)"
+                    }}>
+                      {
+                        message.message
+                      }
+                    </p>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+
+        
+            <div className="">
+              <InteractiveAvatarTextInput
+                label="Type here"
+                placeholder="Ask me"
+                input={text}
+                setMessages={setMessages}
+                messages={messages}
+                onSubmit={handleSpeakWithMic}
+                setInput={setText}
+                disabled={!stream}
+                loading={isLoadingRepeat}
+              />
+            </div>
+        </div>
+        }
           
         </CardBody>
-        <Divider />
-        <CardFooter className="flex flex-col gap-3">
+        {/* <Divider /> */}
+        {/* <CardFooter className="flex flex-col gap-3"> */}
         {/* <InteractiveAvatarTextInput
             label="Chat"
             placeholder="Chat with the avatar (Voice)"
@@ -480,10 +543,10 @@ export default function InteractiveAvatar() {
             disabled={!stream}
           /> */}
           {/* <InteractiveAvatarTextInput
-            label="Repeat"
-            placeholder="Type something for the avatar to repeat"
+            label="Type here"
+            placeholder="Ask me"
             input={text}
-            onSubmit={handleSpeak}
+            onSubmit={handleSpeakWithMic}
             setInput={setText}
             disabled={!stream}
             loading={isLoadingRepeat}
@@ -502,7 +565,7 @@ export default function InteractiveAvatar() {
             }
           </div> */}
 
-        </CardFooter>
+        {/* </CardFooter> */}
       </Card>
       {/* <p className="font-mono text-right">
         <span className="font-bold">Console:</span>
