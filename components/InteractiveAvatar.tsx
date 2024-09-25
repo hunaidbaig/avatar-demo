@@ -16,7 +16,7 @@ import {
   Spinner,
   Tooltip,
 } from "@nextui-org/react";
-import { Microphone, MicrophoneStage } from "@phosphor-icons/react";
+import { Microphone, MicrophoneStage, X } from "@phosphor-icons/react";
 import { useChat } from "ai/react";
 import clsx from "clsx";
 import OpenAI from "openai";
@@ -24,6 +24,9 @@ import { useEffect, useRef, useState } from "react";
 import InteractiveAvatarTextInput from "./InteractiveAvatarTextInput";
 import { CanvasRender } from "./canvas-render";
 import Avatar from "./Avatar";
+import Image from "next/image";
+import { useMicrophone } from "@/app/context/MicrophoneContextProvider";
+import ChatInput from "./chatInput";
 
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
@@ -56,7 +59,8 @@ export default function InteractiveAvatar() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isVideo, setIsVideo] = useState(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
-  
+  const { shutdownMicrophone } = useMicrophone();
+  const [isStreaming, setIsStreaming] = useState(false);
   
   const avatar = useRef<StreamingAvatarApi | null>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null);
@@ -115,8 +119,8 @@ export default function InteractiveAvatar() {
         {
           newSessionRequest: {
             quality: "high",
-            avatarName: avatarId,
-            voice: { voiceId: voiceId },
+            avatarName: 'Tyler-incasualsuit-20220721',
+            voice: { voiceId: '0ebe70d83b2349529e56492c002c9572' },
           },
         },
         setDebug
@@ -172,12 +176,27 @@ export default function InteractiveAvatar() {
       setDebug("Avatar API not initialized");
       return;
     }
+    
+    // Stop avatar session
     await avatar.current.stopAvatar(
       { stopSessionRequest: { sessionId: data?.sessionId } },
       setDebug
     );
+    
+    // Stop media stream
+    if (mediaStream.current) {
+      console.log('stop it bro!!!')
+      mediaStream.current.srcObject = null;
+    }
+    setIsStreaming(false);
     setStream(undefined);
+    shutdownMicrophone();
+    setCanPlay(false);
+    setIsLoadingSession(false);
+    setIsLoadingRepeat(false);
+    setMessages([]);
   }
+    // stopRecording();
 
   async function handleSpeak() {
     setIsLoadingRepeat(true);
@@ -253,7 +272,9 @@ export default function InteractiveAvatar() {
     if (stream && mediaStream.current) {
       mediaStream.current.srcObject = stream;
       mediaStream.current.onloadedmetadata = () => {
+        setIsStreaming(true);
         mediaStream.current!.play();
+        console.log('start stream!', mediaStream.current?.srcObject)
         setDebug("Playing");
       };
     }
@@ -350,7 +371,11 @@ export default function InteractiveAvatar() {
             <div
               className="absolute top-0 left-0 w-full h-full bg-cover bg-center z-10"
               style={{ backgroundImage: `url('/bg.jpg')` }}
-            />
+            >
+              <div onClick={endSession} className="absolute right-9 top-8 cursor-pointer hover:opacity-65">
+                <X size={32} />
+              </div>
+            </div>
           ) : null}
 
           {stream ? (
@@ -367,70 +392,91 @@ export default function InteractiveAvatar() {
               avatarIsSpeaking={avatarIsSpeaking}
               setMessages={setMessages}
               messages={messages}
+              speaking={speaking}
+              isStreaming={isStreaming}
               />
 
-          ) : !isLoadingSession ? (
-            <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
-              <div className="flex flex-col gap-2 w-full">
-                <p className="text-sm font-medium leading-none">
-                  Custom Avatar ID (optional)
-                </p>
-                <Input
-                  value={avatarId}
-                  onChange={(e) => setAvatarId(e.target.value)}
-                  placeholder="Enter a custom avatar ID"
-                />
-                <Select
-                  placeholder="Or select one from these example avatars"
-                  size="md"
-                  onChange={(e) => {
-                    setAvatarId(e.target.value);
-                  }}
-                >
-                  {AVATARS.map((avatar) => (
-                    <SelectItem
-                      key={avatar.avatar_id}
-                      textValue={avatar.avatar_id}
-                    >
-                      {avatar.name}
-                    </SelectItem>
-                  ))}
-                </Select>
+          ) :  (
+            <div className="w-full h-full bg-cover  ">
+              <Image
+                src={'/bg-screen.png'}
+                width={2000}
+                height={2000}
+                className="w-full h-full"
+                alt="bg-screen"
+              />
+              
+              <div className="absolute bottom-[24px] left-0 right-0 w-full flex justify-center">
+                <div className="p-8 w-[480px] rounded-xl backdrop-blur-lg text-white text-center bg-gradient-to-r from-[rgba(50,181,255,0.07)] to-[rgba(255,114,bg-gradient-to-r from-[rgba(50,181,255,0.07)] to-[rgba(255,114,224,0.07)] bg-[rgba(22,23,26,0.3)]224,0.07)] bg-[rgba(22,23,26,0.3)]">
+                  <div className="flex flex-col gap-4 items-center">
+                    <div>👋 Enjoy a chat with !</div>
+                    <Button disabled={isLoadingSession} onClick={startSession} className="bg-[#7559ff] w-[50%] text-white text-lg">
+                      { isLoadingSession ? <Spinner size="sm" color="white" /> : 'Start new chat'}
+                      </Button>
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-2 w-full">
-                <p className="text-sm font-medium leading-none">
-                  Custom Voice ID (optional)
-                </p>
-                <Input
-                  value={voiceId}
-                  onChange={(e) => setVoiceId(e.target.value)}
-                  placeholder="Enter a custom voice ID"
-                />
-                <Select
-                  placeholder="Or select one from these example voices"
-                  size="md"
-                  onChange={(e) => {
-                    setVoiceId(e.target.value);
-                  }}
-                >
-                  {VOICES.map((voice) => (
-                    <SelectItem key={voice.voice_id} textValue={voice.voice_id}>
-                      {voice.name} | {voice.language} | {voice.gender}
-                    </SelectItem>
-                  ))}
-                </Select>
-              </div>
-              <Button
-                size="md"
-                onClick={startSession}
-                className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
-                variant="shadow"
-              >
-                Start session
-              </Button>
+
             </div>
-          ) : (
-            <Spinner size="lg" color="default" />
+            // <div className="h-full justify-center items-center flex flex-col gap-8 w-[500px] self-center">
+            //   <div className="flex flex-col gap-2 w-full">
+            //     <p className="text-sm font-medium leading-none">
+            //       Custom Avatar ID (optional)
+            //     </p>
+            //     <Input
+            //       value={avatarId}
+            //       onChange={(e) => setAvatarId(e.target.value)}
+            //       placeholder="Enter a custom avatar ID"
+            //     />
+            //     <Select
+            //       placeholder="Or select one from these example avatars"
+            //       size="md"
+            //       onChange={(e) => {
+            //         setAvatarId(e.target.value);
+            //       }}
+            //     >
+            //       {AVATARS.map((avatar) => (
+            //         <SelectItem
+            //           key={avatar.avatar_id}
+            //           textValue={avatar.avatar_id}
+            //         >
+            //           {avatar.name}
+            //         </SelectItem>
+            //       ))}
+            //     </Select>
+            //   </div>
+            //   <div className="flex flex-col gap-2 w-full">
+            //     <p className="text-sm font-medium leading-none">
+            //       Custom Voice ID (optional)
+            //     </p>
+            //     <Input
+            //       value={voiceId}
+            //       onChange={(e) => setVoiceId(e.target.value)}
+            //       placeholder="Enter a custom voice ID"
+            //     />
+            //     <Select
+            //       placeholder="Or select one from these example voices"
+            //       size="md"
+            //       onChange={(e) => {
+            //         setVoiceId(e.target.value);
+            //       }}
+            //     >
+            //       {VOICES.map((voice) => (
+            //         <SelectItem key={voice.voice_id} textValue={voice.voice_id}>
+            //           {voice.name} | {voice.language} | {voice.gender}
+            //         </SelectItem>
+            //       ))}
+            //     </Select>
+            //   </div>
+            //   <Button
+            //     size="md"
+            //     onClick={startSession}
+            //     className="bg-gradient-to-tr from-indigo-500 to-indigo-300 w-full text-white"
+            //     variant="shadow"
+            //   >
+            //     Start session
+            //   </Button>
+            // </div>
           )}
 
         {
@@ -479,8 +525,18 @@ export default function InteractiveAvatar() {
           </div>
 
         
-            <div className="">
-              <InteractiveAvatarTextInput
+            <div className="flex justify-center w-full mb-2">
+              <ChatInput
+                input={text}
+                setMessages={setMessages}
+                messages={messages}
+                onSubmit={handleSpeakWithMic}
+                setInput={setText}
+                disabled={!stream}
+                loading={isLoadingRepeat}
+                speaking={speaking}
+              />
+              {/* <InteractiveAvatarTextInput
                 label="Type here"
                 placeholder="Ask me"
                 input={text}
@@ -490,88 +546,14 @@ export default function InteractiveAvatar() {
                 setInput={setText}
                 disabled={!stream}
                 loading={isLoadingRepeat}
-              />
+              /> */}
             </div>
         </div>
         }
           
         </CardBody>
-        {/* <Divider /> */}
-        {/* <CardFooter className="flex flex-col gap-3"> */}
-        {/* <InteractiveAvatarTextInput
-            label="Chat"
-            placeholder="Chat with the avatar (Voice)"
-            input={input}
-            onSubmit={() => {
-              setIsLoadingChat(true);
-              if (!input) {
-                setDebug("Please enter text to send to ChatGPT");
-                return;
-              }
-              handleSubmit();
-            }}
-            setInput={setInput}
-            loading={isLoadingChat}
-            endContent={
-              <Tooltip
-                content={!recording ? "Start recording" : "Stop recording"}
-              >
-                <Button
-                  onClick={!recording ? startRecording : stopRecording}
-                  isDisabled={!stream}
-                  isIconOnly
-                  className={clsx(
-                    "mr-4 text-white",
-                    !recording
-                      ? "bg-gradient-to-tr from-indigo-500 to-indigo-300"
-                      : ""
-                  )}
-                  size="sm"
-                  variant="shadow"
-                >
-                  {!recording ? (
-                    <Microphone size={20} />
-                  ) : (
-                    <>
-                      <div className="absolute h-full w-full bg-gradient-to-tr from-indigo-500 to-indigo-300 animate-pulse -z-10"></div>
-                      <MicrophoneStage size={20} />
-                    </>
-                  )}
-                </Button>
-              </Tooltip>
-            }
-            disabled={!stream}
-          /> */}
-          {/* <InteractiveAvatarTextInput
-            label="Type here"
-            placeholder="Ask me"
-            input={text}
-            onSubmit={handleSpeakWithMic}
-            setInput={setText}
-            disabled={!stream}
-            loading={isLoadingRepeat}
-          /> */}
-          
-          {/* <div className="w-full flex justify-center items-center h-[40px] rounded-lg">
-            { speaking ? 
-                <div>
-                  <img src="/streaming-listening.gif" />
-                </div>
-              :
-              <div className="text-3xl">
-                .....
-              </div>
-
-            }
-          </div> */}
-
-        {/* </CardFooter> */}
+        
       </Card>
-      {/* <p className="font-mono text-right">
-        <span className="font-bold">Console:</span>
-        <br />
-        {debug}
-      </p> */}
     </div>
   );
 }

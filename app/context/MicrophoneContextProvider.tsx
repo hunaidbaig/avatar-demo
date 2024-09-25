@@ -14,6 +14,9 @@ interface MicrophoneContextType {
   stopMicrophone: () => void;
   setupMicrophone: () => void;
   microphoneState: MicrophoneState | null;
+  shutdownMicrophone : () => void;
+  handleToggle : (type : string)=> void;
+  isTyping : boolean;
 }
 
 export enum MicrophoneEvents {
@@ -51,6 +54,8 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
     MicrophoneState.NotSetup
   );
   const [microphone, setMicrophone] = useState<MediaRecorder | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
+
 
   const setupMicrophone = async () => {
     setMicrophoneState(MicrophoneState.SettingUp);
@@ -83,6 +88,13 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
     }
   }, [microphone]);
 
+  const shutdownMicrophone = useCallback(() => {
+    microphone?.stream.getTracks().forEach((track) => track.stop());
+    
+    setMicrophoneState(MicrophoneState.NotSetup)
+    setMicrophone(null);
+  }, [microphone]);
+
   const startMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Opening);
 
@@ -95,14 +107,29 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
     setMicrophoneState(MicrophoneState.Open);
   }, [microphone]);
 
+
+  const handleToggle = (type : string) => {
+    if(type === 'typing'){
+      stopMicrophone();
+    }
+    else{
+      console.log('clicked')
+      startMicrophone();
+    }
+    setIsTyping((prev) => !prev);
+  };
+
   return (
     <MicrophoneContext.Provider
       value={{
         microphone,
         startMicrophone,
         stopMicrophone,
+        shutdownMicrophone,
         setupMicrophone,
         microphoneState,
+        handleToggle,
+        isTyping
       }}
     >
       {children}

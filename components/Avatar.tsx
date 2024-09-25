@@ -20,12 +20,14 @@ function Avatar({
   canPlay,
   setCanPlay,
   setSpeaking,
+  speaking,
   setIsProcessing,
   setTranscript,
   handleSpeakWithMic,
   setAvatarIsSpeaking,
   avatarIsSpeaking,
   setMessages,
+  isStreaming,
   messages
 }: any) {
   const silenceTimeoutRef = useRef(null);
@@ -35,7 +37,7 @@ function Avatar({
   let caption = '';
   const [finalScript, setFinalScript] = useState<string>()
   const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState, stopMicrophone } =
+  const { setupMicrophone, microphone, startMicrophone, microphoneState, isTyping } =
     useMicrophone();
   const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
@@ -67,9 +69,10 @@ function Avatar({
   useEffect(() => {
     setupMicrophone();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mediaStream]);
 
   useEffect(() => {
+    console.log('chala', microphoneState , MicrophoneState.Ready)
     if (microphoneState === MicrophoneState.Ready) {
       connectToDeepgram({
         // model: "nova-2",
@@ -139,7 +142,7 @@ function Avatar({
         caption = '';
       }
     };
-
+    console.log(connectionState, '======================');
     if (connectionState === LiveConnectionState.OPEN) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
@@ -154,7 +157,7 @@ function Avatar({
       clearTimeout(captionTimeout.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState]);
+  }, [connectionState, microphone]);
 
   useEffect(() => {
     if (!connection) return;
@@ -176,7 +179,7 @@ function Avatar({
       clearInterval(keepAliveInterval.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState, connectionState]);
+  }, [microphoneState, connectionState, microphone]);
 
   return (
     <div className="relative h-[80vh] w-[900px] justify-center items-center flex rounded-lg overflow-hidden">
@@ -196,16 +199,7 @@ function Avatar({
       >
         <track kind="captions" />
       </video>
-      {canPlay && <CanvasRender videoRef={mediaStream} />}
-      {canPlay && (
-        <video
-          autoPlay
-          playsInline
-          src={"/bg.mp4"}
-          loop
-          className="absolute top-0 right-0 bottom-0 h-full w-full object-cover"
-        />
-      )}
+      {(canPlay && mediaStream) && <CanvasRender isStreaming={isStreaming} videoRef={mediaStream} />}
     </div>
   );
 }

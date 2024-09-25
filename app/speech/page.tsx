@@ -14,7 +14,7 @@ export default function VoiceAssistant() {
       const recognition = new SpeechRecognition();
       recognition.continuous = true; // Continue listening
       recognition.interimResults = false; // Return interim results
-      recognition.lang = "en-US"; // Set language to English
+      // recognition.lang = "en-US"; // Set language to English
   
       recognition.onstart = () => {
         console.log("Voice recognition started.");
