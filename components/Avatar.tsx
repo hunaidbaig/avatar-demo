@@ -182,7 +182,7 @@ function Avatar({
   }, [microphoneState, connectionState, microphone]);
 
   return (
-    <div className="relative h-[80vh] w-[900px] justify-center items-center flex rounded-lg overflow-hidden">
+    <div className="relative h-[90vh] w-[1200px] justify-center items-center flex rounded-lg overflow-hidden">
       <video
         ref={mediaStream}
         autoPlay

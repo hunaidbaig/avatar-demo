@@ -76,5 +76,5 @@ export function CanvasRender(props: CanvasRenderProps) {
     };
   }, [videoRef]);
 
-  return <canvas className="w-[95%] h-[70vh] bg-cover bg-center z-10" style={style} ref={refCanvas} />;
+  return <canvas className="w-full h-[90vh] bg-cover bg-center z-10" style={style} ref={refCanvas} />;
 }
