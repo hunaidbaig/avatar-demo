@@ -19,15 +19,18 @@ export function CanvasRender(props: CanvasRenderProps) {
     const ctx = refCanvas.current?.getContext('2d');
     let show = true;
 
+    // Green screen parameters
+    const greenThreshold = 120; // Adjust as needed
+    const tolerance = 1.6; // Strength of green compared to red and blue
+    const feathering = 5; // Number of pixels for feathering (smooth edges)
+
     function processFrame() {
       if (!refCanvas.current || !ctx || !show) return;
 
-      // If streaming is active, draw the video frames
       if (isStreaming && videoRef.current?.readyState === 4) {
         ctx.clearRect(0, 0, refCanvas.current.width, refCanvas.current.height);
         ctx.drawImage(videoRef.current, 0, 0, refCanvas.current.width, refCanvas.current.height);
 
-        // Optional: Image data processing (e.g., green screen effect)
         const imageData = ctx.getImageData(0, 0, refCanvas.current.width, refCanvas.current.height);
         const data = imageData.data;
 
@@ -36,9 +39,21 @@ export function CanvasRender(props: CanvasRenderProps) {
           const green = data[i + 1];
           const blue = data[i + 2];
 
-          // Adjust green screen removal based on the actual scenario
-          if (green > 90 && red < 90 && blue < 90) {
-            data[i + 3] = 0; // Set green pixels to transparent
+          // Check if the pixel is green enough to be removed
+          if (green > greenThreshold && green > red * tolerance && green > blue * tolerance) {
+            data[i + 3] = 0; // Set alpha to 0 for transparency
+
+            // Feather the edges by checking neighboring pixels
+            for (let f = 1; f <= feathering; f++) {
+              // Get the surrounding pixels for feathering
+              const prevPixelIndex = i - (4 * f);
+              const nextPixelIndex = i + (4 * f);
+              if (prevPixelIndex >= 0 && nextPixelIndex < data.length) {
+                // Apply a gradual transparency effect for smoothing
+                data[prevPixelIndex + 3] = Math.max(data[prevPixelIndex + 3] - f * 20, 0);
+                data[nextPixelIndex + 3] = Math.max(data[nextPixelIndex + 3] - f * 20, 0);
+              }
+            }
           }
         }
 
@@ -61,5 +76,5 @@ export function CanvasRender(props: CanvasRenderProps) {
     };
   }, [videoRef]);
 
-  return <canvas className="w-[95%] bg-cover bg-center z-10" style={style} ref={refCanvas} />;
+  return <canvas className="w-[95%] h-[70vh] bg-cover bg-center z-10" style={style} ref={refCanvas} />;
 }

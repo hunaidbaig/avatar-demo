@@ -119,8 +119,8 @@ export default function InteractiveAvatar() {
         {
           newSessionRequest: {
             quality: "high",
-            avatarName: 'Tyler-incasualsuit-20220721',
-            voice: { voiceId: '0ebe70d83b2349529e56492c002c9572' },
+            avatarName: '0cb54522970c4820b3763469a612bedc',
+            voice: { voiceId: '131a436c47064f708210df6628ef8f32' },
           },
         },
         setDebug
@@ -499,18 +499,19 @@ export default function InteractiveAvatar() {
         stream && 
         <div className="z-10 w-[50%] absolute">
           <div className="px-4 text-white z-10 h-[200px] overflow-y-auto pt-8" style={{
-            maskImage: "linear-gradient(to top, black, transparent)"
+            maskImage: "linear-gradient(to top, black 20%, transparent 20%);"
           }}>
             {
               messages?.map((message, index)=>(
-                <div className="flex justify-start mt-2">
+                <div className={`flex ${ message.user === 'bot' ? 'justify-end' : 'justify-start'}  mt-2`}>
                   <div className="flex justify-between gap-3">
-                    <div className={`h-[20px] w-[20px] ${message.user === 'bot' ? 'bg-[rgb(64,67,211)]': 'bg-gray-500'}  rounded-full flex justify-center items-center`}>
-                      {
-                        message.user === 'bot' ? 'Q' : 'U'
-                      }
-                    </div>
-                    <p className="w-full"
+                    {
+                      message.user === 'user' && 
+                      <div className={`h-[20px] w-[20px] bg-gray-500  rounded-full flex justify-center items-center`}>
+                        U
+                      </div>
+                    }
+                    <p className="w-full px-2 rounded-md text-white"
                     style={{
                       background: "linear-gradient(313deg, rgba(50, 181, 255, 0.07) 9.15%, rgba(255, 114, 224, 0.07) 104.07%), rgba(22, 23, 26, 0.3)"
                     }}>
@@ -518,6 +519,12 @@ export default function InteractiveAvatar() {
                         message.message
                       }
                     </p>
+                    {
+                      message.user === 'bot' && 
+                      <div className={`h-[20px] w-[20px] bg-[#3b82f6]  rounded-full flex justify-center items-center`}>
+                        Q
+                      </div>
+                    }
                   </div>
                 </div>
               ))
